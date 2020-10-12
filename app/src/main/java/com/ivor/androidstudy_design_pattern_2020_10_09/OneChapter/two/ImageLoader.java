@@ -5,8 +5,8 @@ import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.util.LruCache;
 import android.widget.ImageView;
+
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -21,37 +21,32 @@ import java.util.concurrent.Executors;
 
 public class ImageLoader {
 
-    String TAG = getClass().getName();
+    String TAG = getClass().getSimpleName();
 
-    ImageCache mImageCache = new ImageCache();
+    ImageCache mImageCache = new MemoryCache();
 
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     Handler mUIHandler = new Handler(Looper.getMainLooper());
 
     public ImageLoader() {
-        initImageLoader();
+
     }
 
-    private void initImageLoader() {
-
+    public void setImageCache(ImageCache mImageCache) {
+        this.mImageCache = mImageCache;
     }
 
     public void displayImage(final String url, final ImageView imageView) {
         imageView.setTag(url);
-        mExecutorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                Bitmap bitmap = downloadImage(url);
-                if (bitmap == null) {
-                    return;
-                }
-                if (imageView.getTag().equals(url)) {
-                    updateImageView(imageView, bitmap);
-                }
-                mImageCache.put(url, bitmap);
-            }
-        });
+        Bitmap bitmap = mImageCache.get(url);
+        if (bitmap != null) {
+            updateImageView(imageView, bitmap);
+            return;
+        }
+
+        submitLoadRequest(url, imageView);
+
     }
 
 
@@ -66,7 +61,6 @@ public class ImageLoader {
 
     private Bitmap downloadImage(String imageUrl) {
         Bitmap bitmap = null;
-
         try {
             URL url = new URL(imageUrl);
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -81,6 +75,22 @@ public class ImageLoader {
             Log.d(TAG, "bitmap: size======>" + bitmap.getRowBytes() * bitmap.getHeight() / 1024);
         }
         return bitmap;
+    }
+
+    private void submitLoadRequest(final String imageUrl, final ImageView imageView) {
+        imageView.setTag(imageUrl);
+        mExecutorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap = downloadImage(imageUrl);
+                if (bitmap == null) {
+                    return;
+                }
+                if (imageView.getTag().equals(imageUrl)) {
+                    updateImageView(imageView, bitmap);
+                }
+            }
+        });
     }
 
 }

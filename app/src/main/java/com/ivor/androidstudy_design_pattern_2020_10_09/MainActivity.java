@@ -1,10 +1,11 @@
 package com.ivor.androidstudy_design_pattern_2020_10_09;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.widget.ImageView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.ivor.androidstudy_design_pattern_2020_10_09.OneChapter.two.DoubleCache;
 import com.ivor.androidstudy_design_pattern_2020_10_09.OneChapter.two.ImageLoader;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,7 +20,8 @@ public class MainActivity extends AppCompatActivity {
 
         imageView = findViewById(R.id.imageView);
 
-        ImageLoader imageLoader_ = new ImageLoader();
-        imageLoader_.displayImage(imageUrl, imageView);
+        ImageLoader imageLoader = new ImageLoader();
+        imageLoader.setImageCache(new DoubleCache());
+        imageLoader.displayImage(imageUrl, imageView);
     }
 }

@@ -1,10 +1,10 @@
-package com.ivor.androidstudy_design_pattern_2020_10_09.OneChapter.one;
+package com.ivor.androidstudy_design_pattern_2020_10_09.OneChapter;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import android.util.LruCache;
 import android.widget.ImageView;
 
 import java.io.IOException;
@@ -19,10 +19,7 @@ import java.util.concurrent.Executors;
  */
 
 public class ImageLoader {
-
-    String TAG = getClass().getSimpleName();
-
-    ImageCache mImageCache = new ImageCache();
+    LruCache<String, Bitmap> mImageCache;
 
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -34,6 +31,16 @@ public class ImageLoader {
 
     private void initImageLoader() {
 
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+        final int cacheSize = maxMemory / 4;
+
+        mImageCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap value) {
+                return value.getRowBytes() * value.getHeight() / 1024;
+            }
+        };
     }
 
     public void displayImage(final String url, final ImageView imageView) {
@@ -75,9 +82,6 @@ public class ImageLoader {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        if (bitmap != null) {
-            Log.d(TAG, "bitmap: size======>" + bitmap.getRowBytes() * bitmap.getHeight() / 1024);
         }
         return bitmap;
     }
